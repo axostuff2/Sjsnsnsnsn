@@ -299,6 +299,56 @@
       font-size: 13px;
     }
 
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-label { font-size: 13px; }
+    .toggle-label .sub { display: block; font-size: 11px; color: #999; margin-top: 2px; }
+
+    .switch {
+      position: relative;
+      width: 38px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-track {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #ddd;
+      border-radius: 22px;
+      transition: background 0.15s;
+    }
+    .switch-track::before {
+      content: "";
+      position: absolute;
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.15s;
+    }
+    .switch input:checked + .switch-track { background: #e5172d; }
+    .switch input:checked + .switch-track::before { transform: translateX(16px); }
+    .switch input:disabled + .switch-track { opacity: 0.5; cursor: not-allowed; }
+
+    .settings-note {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+
     footer {
       text-align: center;
       font-size: 11px;
@@ -320,17 +370,18 @@
   <div class="backend-row">
     <label>Backend</label>
     <select id="backend-select" onchange="onBackendSelect()">
-      <option value="https://tesy.acc943132.workers.dev/">Cloudflare Worker</option>
+      <option value="https://pipeypipeline.acc943132.workers.dev/">Cloudflare Worker</option>
       <option value="http://localhost:8787/">Local runner (recommended)</option>
       <option value="custom">Custom...</option>
     </select>
-    <input type="text" id="backend-url" value="https://tesy.acc943132.workers.dev/" />
+    <input type="text" id="backend-url" value="https://pipeypipeline.acc943132.workers.dev/" />
   </div>
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('universe')">Create Universe</button>
     <button class="tab" onclick="switchTab('place')">Create Place</button>
     <button class="tab" onclick="switchTab('experiences')">My Experiences</button>
+    <button class="tab" onclick="switchTab('settings')">Experience Settings</button>
     <button class="tab" onclick="switchTab('log')">Log</button>
   </div>
 
@@ -436,6 +487,77 @@
     </div>
   </div>
 
+  <!-- Settings Panel -->
+  <div id="panel-settings" class="panel">
+    <div class="card">
+      <div class="field">
+        <label>Roblox Security Cookie</label>
+        <input type="text" id="s-cookie" placeholder="Paste your .ROBLOSECURITY cookie here" />
+      </div>
+      <div class="field">
+        <label>Universe ID</label>
+        <input type="text" id="s-universe" placeholder="e.g. 123456789" />
+        <div class="hint">Use "Add Place" from My Experiences, or paste it directly.</div>
+      </div>
+      <div class="btn-row" style="margin-bottom: 18px;">
+        <button class="btn btn-primary" id="s-load-btn" onclick="loadSettings()">Load Settings</button>
+      </div>
+      <div class="status-row">
+        <div class="dot" id="s-dot"></div>
+        <span id="s-status">Ready</span>
+      </div>
+
+      <div id="s-fields" style="display:none;">
+        <hr class="divider" />
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="s-name" />
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <input type="text" id="s-description" />
+        </div>
+        <hr class="divider" />
+
+        <div class="toggle-row">
+          <div class="toggle-label">Allow third-party teleports<span class="sub">Other experiences can teleport players into this one</span></div>
+          <label class="switch"><input type="checkbox" id="s-3p-teleport" /><span class="switch-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Allow third-party assets<span class="sub">Other experiences' assets can be used here</span></div>
+          <label class="switch"><input type="checkbox" id="s-3p-asset" /><span class="switch-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Allow third-party purchases<span class="sub">Developer products/passes can be purchased from outside</span></div>
+          <label class="switch"><input type="checkbox" id="s-3p-purchase" /><span class="switch-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Studio API access<span class="sub">Allows HttpService and similar APIs in Studio</span></div>
+          <label class="switch"><input type="checkbox" id="s-studio-api" /><span class="switch-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Friends only<span class="sub">Only your friends can join</span></div>
+          <label class="switch"><input type="checkbox" id="s-friends-only" /><span class="switch-track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Allow private servers<span class="sub">Players can rent/create private servers</span></div>
+          <label class="switch"><input type="checkbox" id="s-private-servers" /><span class="switch-track"></span></label>
+        </div>
+
+        <div class="btn-row" style="margin-top: 18px;">
+          <button class="btn btn-primary" id="s-save-btn" onclick="saveSettings()">Save Changes</button>
+        </div>
+
+        <div class="settings-note">
+          Voice chat eligibility isn't exposed through this API (Roblox only surfaces
+          it in the Communication tab of the Creator Dashboard), so it can't be
+          toggled from here. Everything above maps to the same experience
+          configuration endpoint Studio uses.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Log Panel -->
   <div id="panel-log" class="panel">
     <div class="card" style="border-radius:8px;">
@@ -469,7 +591,7 @@
 
   function switchTab(id) {
     document.querySelectorAll('.tab').forEach((t, i) => {
-      t.classList.toggle('active', ['universe', 'place', 'experiences', 'log'][i] === id);
+      t.classList.toggle('active', ['universe', 'place', 'experiences', 'settings', 'log'][i] === id);
     });
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + id).classList.add('active');
@@ -601,9 +723,21 @@
   function useUniverseId(universeId, name) {
     document.getElementById('p-universe').value = universeId;
     const cookie = document.getElementById('e-cookie').value.trim();
-    if (cookie) document.getElementById('p-cookie').value = cookie;
+    if (cookie) {
+      document.getElementById('p-cookie').value = cookie;
+      document.getElementById('s-cookie').value = cookie;
+    }
+    document.getElementById('s-universe').value = universeId;
     switchTab('place');
     log(`Selected "${name}" (Universe ${universeId}) for place creation.`, 'info');
+  }
+
+  function useUniverseIdForSettings(universeId, name) {
+    const cookie = document.getElementById('e-cookie').value.trim();
+    if (cookie) document.getElementById('s-cookie').value = cookie;
+    document.getElementById('s-universe').value = universeId;
+    switchTab('settings');
+    log(`Selected "${name}" (Universe ${universeId}) for settings.`, 'info');
   }
 
   function renderGames(games) {
@@ -627,13 +761,25 @@
       info.appendChild(nameEl);
       info.appendChild(metaEl);
 
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-secondary';
-      btn.textContent = 'Add Place';
-      btn.onclick = () => useUniverseId(g.universeId, g.name || '(untitled)');
+      const btnGroup = document.createElement('div');
+      btnGroup.style.display = 'flex';
+      btnGroup.style.gap = '6px';
+
+      const placeBtn = document.createElement('button');
+      placeBtn.className = 'btn btn-secondary';
+      placeBtn.textContent = 'Add Place';
+      placeBtn.onclick = () => useUniverseId(g.universeId, g.name || '(untitled)');
+
+      const settingsBtn = document.createElement('button');
+      settingsBtn.className = 'btn btn-secondary';
+      settingsBtn.textContent = 'Settings';
+      settingsBtn.onclick = () => useUniverseIdForSettings(g.universeId, g.name || '(untitled)');
+
+      btnGroup.appendChild(placeBtn);
+      btnGroup.appendChild(settingsBtn);
 
       row.appendChild(info);
-      row.appendChild(btn);
+      row.appendChild(btnGroup);
       list.appendChild(row);
     });
   }
@@ -664,6 +810,90 @@
 
     document.getElementById('e-btn').disabled = false;
   }
+
+  async function loadSettings() {
+    const cookie = document.getElementById('s-cookie').value.trim();
+    const universeId = document.getElementById('s-universe').value.trim();
+    if (!cookie) { alert('Please paste your .ROBLOSECURITY cookie.'); return; }
+    if (!universeId || isNaN(universeId)) { alert('Please enter a valid Universe ID.'); return; }
+
+    document.getElementById('s-load-btn').disabled = true;
+    setStatus('s', 'Loading settings...', 'running');
+    document.getElementById('s-fields').style.display = 'none';
+
+    try {
+      const res = await callWorker({ action: 'getUniverseConfig', cookie, universeId });
+      if (res.ok) {
+        const c = res.config;
+        document.getElementById('s-name').value = c.name || '';
+        document.getElementById('s-description').value = c.description || '';
+        document.getElementById('s-3p-teleport').checked = !!(c.isThirdPartyTeleportAllowed ?? c.permissions?.IsThirdPartyTeleportAllowed);
+        document.getElementById('s-3p-asset').checked = !!(c.isThirdPartyAssetAllowed ?? c.permissions?.IsThirdPartyAssetAllowed);
+        document.getElementById('s-3p-purchase').checked = !!(c.isThirdPartyPurchaseAllowed ?? c.permissions?.IsThirdPartyPurchaseAllowed);
+        document.getElementById('s-studio-api').checked = !!(c.isStudioAccessToApisAllowed ?? c.studioAccessToApisAllowed);
+        document.getElementById('s-friends-only').checked = !!c.isFriendsOnly;
+        document.getElementById('s-private-servers').checked = !!c.allowPrivateServers;
+
+        document.getElementById('s-fields').style.display = 'block';
+        setStatus('s', `Loaded settings for "${c.name || universeId}".`, 'done');
+        log(`Loaded settings for universe ${universeId}.`, 'ok');
+      } else {
+        setStatus('s', 'Failed to load settings.', 'error');
+        log(`[Settings] ${res.message}`, 'err');
+        switchTab('log');
+      }
+    } catch (e) {
+      setStatus('s', 'Failed to load settings.', 'error');
+      log(`[Settings] Error: ${e.message}`, 'err');
+      switchTab('log');
+    }
+
+    document.getElementById('s-load-btn').disabled = false;
+  }
+
+  async function saveSettings() {
+    const cookie = document.getElementById('s-cookie').value.trim();
+    const universeId = document.getElementById('s-universe').value.trim();
+    if (!cookie) { alert('Please paste your .ROBLOSECURITY cookie.'); return; }
+    if (!universeId || isNaN(universeId)) { alert('Please enter a valid Universe ID.'); return; }
+
+    const config = {
+      name: document.getElementById('s-name').value,
+      description: document.getElementById('s-description').value,
+      isThirdPartyTeleportAllowed: document.getElementById('s-3p-teleport').checked,
+      isThirdPartyAssetAllowed: document.getElementById('s-3p-asset').checked,
+      isThirdPartyPurchaseAllowed: document.getElementById('s-3p-purchase').checked,
+      studioAccessToApisAllowed: document.getElementById('s-studio-api').checked,
+      isFriendsOnly: document.getElementById('s-friends-only').checked,
+      allowPrivateServers: document.getElementById('s-private-servers').checked,
+      permissions: {
+        IsThirdPartyTeleportAllowed: document.getElementById('s-3p-teleport').checked,
+        IsThirdPartyAssetAllowed: document.getElementById('s-3p-asset').checked,
+        IsThirdPartyPurchaseAllowed: document.getElementById('s-3p-purchase').checked,
+      },
+    };
+
+    document.getElementById('s-save-btn').disabled = true;
+    setStatus('s', 'Saving...', 'running');
+
+    try {
+      const res = await callWorker({ action: 'updateUniverseConfig', cookie, universeId, config });
+      if (res.ok) {
+        setStatus('s', 'Settings saved.', 'done');
+        log(`Updated settings for universe ${universeId}.`, 'ok');
+      } else {
+        setStatus('s', 'Failed to save settings.', 'error');
+        log(`[Settings] ${res.message}`, 'err');
+        switchTab('log');
+      }
+    } catch (e) {
+      setStatus('s', 'Failed to save settings.', 'error');
+      log(`[Settings] Error: ${e.message}`, 'err');
+      switchTab('log');
+    }
+
+    document.getElementById('s-save-btn').disabled = false;
+  }
 </script>
 </body>
-</html>
+      </html>
